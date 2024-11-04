@@ -1,0 +1,22 @@
+name: Node.js App Deploy to EKS
+
+on:
+  push:
+    branches:
+      - "main"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source
+        uses: actions/checkout@v4
+
+      - name: Login to Docker Hub
+        run: docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build Docker image
+        run: docker build -t ${{ secrets.DOCKER_USERNAME }}/spring-app:latest .
+
+      - name: Push Image to Docker Hub
+        run: docker push ${{ secrets.DOCKER_USERNAME }}/spring-app:latest
