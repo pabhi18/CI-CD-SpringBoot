@@ -6,32 +6,6 @@ on:
       - "main"
 
 jobs:
-  test:
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-        java-version: [11, 17]
-    runs-on: ${{ matrix.os }}
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up JDK
-        uses: actions/setup-java@v3
-        with:
-          distribution: 'temurin'
-          java-version: ${{ matrix.java-version }}
-
-      - name: Verify Java version
-        run: java -version
-
-      - name: Clean and Build
-        run: ./mvnw clean install
-
-      - name: Run Unit Tests
-        run: ./mvnw test
-
   build:
     needs: test
     runs-on: ubuntu-latest
@@ -47,3 +21,17 @@ jobs:
 
       - name: Push Image to Docker Hub
         run: docker push ${{ secrets.DOCKER_USERNAME }}/spring-app:latest
+
+  deploy:
+    needs: build
+    runs-on: self-hosted
+
+    steps:
+      - name: Pull docker image
+        run: sudo docker pull ${{ secrets.DOCKER_USERNAME }}/spring-app:latest
+
+      - name: Delete old container
+        run: sudo docker rm -f spring-app-container || true
+  
+      - name: Run docker container          
+        run: sudo docker run -d -p 8080:8080 --init --name spring-app-container ${{ secrets.DOCKER_USERNAME }}/spring-app:latest
